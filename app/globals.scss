@@ -35,7 +35,7 @@ $enable-negative-margins: true;
 	color: $dark !important;
 }
 .header {
-	background: url("../public//images/header-background.jpg");
+    background: $dark;
 }
 .icons {
 	padding: 5rem 0rem;
