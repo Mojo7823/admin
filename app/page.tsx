@@ -1,15 +1,11 @@
-import CraftContent from "./components/CraftContent";
-import Header from "./components/Header";
-import Hero from "./components/Hero";
+//Location : admin/app/page.tsx
 
-const Home = () => {
+import {RegisterLink, LoginLink} from "@kinde-oss/kinde-auth-nextjs/components";
+
+export default function Home() {
 	return (
-		<>
-			<Header>
-				<Hero />
-			</Header>
-			<CraftContent />
-		</>
+		<main>
+		<LoginLink>Sign in</LoginLink>
+		</main>
 	);
 };
-export default Home;

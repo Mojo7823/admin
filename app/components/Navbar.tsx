@@ -1,5 +1,4 @@
 "use client";
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -23,13 +22,6 @@ const Navbar = () => {
 		>
 			<div className="container">
 				<Link href="/" className="navbar-brand">
-					<Image
-						src={"/images/logo.png"}
-						alt="logo"
-						width={225}
-						height={25}
-						priority
-					/>
 				</Link>
 				<button
 					className="navbar-toggler"
