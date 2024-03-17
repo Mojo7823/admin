@@ -1,0 +1,46 @@
+$primary: #ff90bc;
+$secondary: #10bcee;
+$dark: #2b3041;
+$light: #f3f6f9;
+$navbar-dark-color: #fff;
+$navbar-dark-hover-color: $secondary;
+
+//Space
+$spacer: 1rem !default;
+$spacers: (
+	0: 0,
+	1: $spacer * 0.25,
+	2: $spacer * 0.5,
+	3: $spacer,
+	4: $spacer * 1.5,
+	5: $spacer * 3,
+	6: $spacer * 6,
+	7: $spacer * 8,
+) !default;
+
+$enable-negative-margins: true;
+* {
+	padding: 0;
+	margin: 0;
+}
+.download {
+	background: url(/images/download-background.jpg) center center no-repeat;
+	background-size: cover;
+}
+.navbar-btn {
+	border-radius: 3.5rem !important;
+	padding: 0.6rem 2rem !important;
+}
+.navbar-btn:hover {
+	color: $dark !important;
+}
+.header {
+	background: url("../public//images/header-background.jpg");
+}
+.icons {
+	padding: 5rem 0rem;
+}
+.testimonials {
+	margin: 8rem 0px !important;
+}
+@import "bootstrap/scss/bootstrap.scss";
