@@ -1,6 +1,6 @@
 //Location : admin/dashboard/app/page.tsx
 
-import CraftContent from "../components/CraftContent";
+import Konten from "../components/Konten";
 import Header from "../components/Header";
 import Hero from "../components/Hero";
 
@@ -10,7 +10,7 @@ const Home = () => {
 			<Header>
 				<Hero />
 			</Header>
-			<CraftContent />
+			<Konten />
 		</>
 	);
 };
