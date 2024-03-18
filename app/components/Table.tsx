@@ -1,44 +1,43 @@
-// Table.tsx
-import React from 'react';
-import Swal from 'sweetalert2';
-import { data } from './TableData';
+// app/components/Table.tsx
+import React, { useEffect, useState } from 'react';
+import { DataGrid } from '@mui/x-data-grid';
 
 export const Table = () => {
-    const handleClick = (item: { id: any; no: any; kode_pel: any; alamat: any; no_hp: any; status: any; }) => {
-        Swal.fire({
-            title: 'Row Data',
-            html: `<strong>ID:</strong> ${item.id}<br/><strong>No:</strong> ${item.no}<br/><strong>Kode Pelanggan:</strong> ${item.kode_pel}<br/><strong>Alamat:</strong> ${item.alamat}<br/><strong>No Hp:</strong> ${item.no_hp}<br/><strong>Status:</strong> ${item.status}`,
-            icon: 'info',
-        });
-    };
+    const [data, setData] = useState([]);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            const res = await fetch('/api/customer');
+            if (!res.ok) {
+                console.error('An error occurred:', await res.text());
+                return;
+            }
+            const data = await res.json();
+            console.log(data); 
+            setData(data);
+        };
+
+        fetchData();
+        
+    }, []);
+
+    const columns = [
+        { field: 'id', headerName: 'No', width: 30 },
+        { field: 'kode_pel', headerName: 'Kode Pelanggan', width: 30 },
+        { field: 'nama', headerName: 'Nama Pelanggan', width: 130 },
+        { field: 'alamat', headerName: 'Alamat', width: 200 },
+        { field: 'alamat2', headerName: 'Alamat Lengkap', width: 200},
+        { field: 'no_hp', headerName: 'No Hp', width: 130 },
+        { field: 'status', headerName: 'Status', width: 100 },
+    ];
 
     return (
-        <table className="table">
-            <thead>
-                <tr>
-                    <th>No</th>
-                    <th>Kode Pelanggan</th>
-                    <th>Alamat</th>
-                    <th>No Hp</th>
-                    <th>Status</th>
-                    <th>Info</th>
-                </tr>
-            </thead>
-            <tbody>
-                {data.map((item, index) => (
-                    <tr key={item.id}>
-                        <td style={{display: 'none'}}>{item.id}</td>
-                        <td>{index + 1}</td>
-                        <td>{item.kode_pel}</td>
-                        <td>{item.alamat}</td>
-                        <td>{item.no_hp}</td>
-                        <td>{item.status}</td>
-                        <td>
-                            <button className="btn btn-primary" onClick={() => handleClick(item)}>View</button>
-                        </td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
+        <div style={{ height: 800, width: '100%' }}>
+            <DataGrid 
+                rows={data} 
+                columns={columns} 
+                onRowClick={(rowParams) => console.log(rowParams)}
+            />
+        </div>
     );
 };

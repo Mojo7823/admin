@@ -6,7 +6,7 @@ import { Table } from './Table';
 
 const Konten = () => {
     return (
-        <div className="details my-5">
+        <div className="details my-5 pt-5"> {/* Add a top padding here */}
             <div className="container">
                 <Table />
             </div>
