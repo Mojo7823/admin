@@ -1,0 +1,120 @@
+// nextjs/app/components/Datacustomer.tsx
+import React, { useEffect, useState, useCallback } from 'react';
+import { DataGrid } from '@mui/x-data-grid';
+import styled from '@emotion/styled';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import { Container, Row, Col, Button, Modal, Table as BootstrapTable } from 'react-bootstrap';
+
+
+const StyledDataGrid = styled(DataGrid)``;
+
+const columns = [
+    { field: 'no', headerName: 'No', width: 5 },
+    { field: 'id', headerName: 'id'},
+    { field: 'kode_pel', headerName: 'Kode Pelanggan', width: 50 },
+    { field: 'nama', headerName: 'Nama Pelanggan', width: 180},
+    { field: 'alamat', headerName: 'Alamat', width: 200},
+    { field: 'alamat2', headerName: 'Alamat Lengkap', width: 200},
+    { field: 'no_hp', headerName: 'No Hp', width: 130},
+    { field: 'status', headerName: 'Status', width: 100 },
+  ];
+
+export const Datacustomer = () => {
+  const [data, setData] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [selectedRow, setSelectedRow] = useState(null);
+
+  const fetchData = useCallback(async () => {
+    const res = await fetch('/api/customer');
+    if (!res.ok) {
+      console.error('An error occurred:', await res.text());
+      return;
+    }
+    let data = await res.json();
+    // Add 'no' field to each row
+    data = data.map((item, index) => ({ no: index + 1, ...item }));
+    setData(data);
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleDoubleClick = ({ row }) => {
+    setSelectedRow(row);
+    setShowModal(true);
+  };
+
+  const handleClose = () => setShowModal(false);
+
+
+  const handleSearch = useCallback((event) => {
+    setSearchTerm(event.target.value);
+  }, []);
+
+  const filteredData = data.filter((row) =>
+    columns.some(
+      (column) => row[column.field] && row[column.field].toString().toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  );
+
+  const handleColumnHeaderClick: GridEventListener<'columnHeaderClick'> = (
+    params,
+    event,
+    details,
+  ) => {
+    event.defaultMuiPrevented = true;
+  };
+
+  return (
+    <div style={{ height: '600px', width: '100%' }}>
+      <Container>
+        <Row className="mb-3">
+          <Col>
+            <input type="text" value={searchTerm} onChange={handleSearch} placeholder="Cari Data..." className="form-control" />
+          </Col>
+          <Col xs="auto">
+            <Button variant="primary">Tambah</Button>
+          </Col>
+          <Col xs="auto">
+            <Button variant="danger">Hapus</Button>
+          </Col>
+        </Row>
+        </Container>
+      <StyledDataGrid 
+        rows={filteredData} 
+        columns={columns} 
+        onCellDoubleClick={handleDoubleClick}
+        columnVisibilityModel={{
+          id: false,
+        }}
+        onColumnHeaderClick={handleColumnHeaderClick}
+      />
+ 
+<Modal show={showModal} onHide={handleClose}>
+  <Modal.Header closeButton>
+    <Modal.Title>Row Details</Modal.Title>
+  </Modal.Header>
+  <Modal.Body>
+    {selectedRow && (
+      <BootstrapTable striped bordered hover>
+        <tbody>
+          <tr><td><strong>Id:</strong></td><td>{selectedRow.id}</td></tr>
+          <tr><td><strong>Kode Pelanggan:</strong></td><td>{selectedRow.kode_pel}</td></tr>
+          <tr><td><strong>Nama Pelanggan:</strong></td><td>{selectedRow.nama}</td></tr>
+          <tr><td><strong>Alamat:</strong></td><td>{selectedRow.alamat}</td></tr>
+          <tr><td><strong>Alamat Lengkap:</strong></td><td>{selectedRow.alamat2}</td></tr>
+          <tr><td><strong>No Hp:</strong></td><td>{selectedRow.no_hp}</td></tr>
+          <tr><td><strong>Status:</strong></td><td>{selectedRow.status}</td></tr>
+        </tbody>
+      </BootstrapTable>
+    )}
+  </Modal.Body>
+  <Modal.Footer>
+    <Button variant="secondary" onClick={handleClose}>Close</Button>
+  </Modal.Footer>
+</Modal>
+    </div>
+  );
+};

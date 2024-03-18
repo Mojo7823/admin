@@ -2,13 +2,13 @@
 "use client";
 import React from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { Table } from './Table';
+import { Datacustomer } from './Datacustomer';
 
 const Konten = () => {
     return (
         <div className="details my-5 pt-5"> {/* Add a top padding here */}
             <div className="container">
-                <Table />
+                <Datacustomer />
             </div>
         </div>
     );
