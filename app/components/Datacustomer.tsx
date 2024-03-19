@@ -1,15 +1,28 @@
 // nextjs/app/components/Datacustomer.tsx
 import React, { useEffect, useState, useCallback } from 'react';
-import { DataGrid } from '@mui/x-data-grid';
+import { DataGrid, GridEventListener } from '@mui/x-data-grid';
 import styled from '@emotion/styled';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Container, Row, Col, Button, Modal, Table as BootstrapTable } from 'react-bootstrap';
 
-
+type Customer = {
+  id: string;
+  kode_pel: string;
+  nama: string;
+  alamat: string;
+  alamat2: string;
+  no_hp: string;
+  status: string;
+  no: string;
+};
 const StyledDataGrid = styled(DataGrid)``;
+type Column = {
+  field: keyof Customer;
+  headerName: string;
+  width?: number;
+};
 
-const columns = [
-    { field: 'no', headerName: 'No', width: 5 },
+  const columns: Column[] = [
     { field: 'id', headerName: 'id'},
     { field: 'kode_pel', headerName: 'Kode Pelanggan', width: 50 },
     { field: 'nama', headerName: 'Nama Pelanggan', width: 180},
@@ -20,10 +33,10 @@ const columns = [
   ];
 
 export const Datacustomer = () => {
-  const [data, setData] = useState([]);
+  const [data, setData] = useState<Customer[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [selectedRow, setSelectedRow] = useState(null);
+  const [selectedRow, setSelectedRow] = useState<Customer | null>(null);
 
   const fetchData = useCallback(async () => {
     const res = await fetch('/api/customer');
@@ -31,17 +44,17 @@ export const Datacustomer = () => {
       console.error('An error occurred:', await res.text());
       return;
     }
-    let data = await res.json();
-    // Add 'no' field to each row
-    data = data.map((item, index) => ({ no: index + 1, ...item }));
+    let data: Customer[] = await res.json();
+    data = data.map((item: Customer, index: number) => ({ ...item, no: (index + 1).toString() }));
     setData(data);
+
   }, []);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  const handleDoubleClick = ({ row }) => {
+  const handleDoubleClick = ({ row }: { row: Customer }) => {
     setSelectedRow(row);
     setShowModal(true);
   };
@@ -49,7 +62,7 @@ export const Datacustomer = () => {
   const handleClose = () => setShowModal(false);
 
 
-  const handleSearch = useCallback((event) => {
+  const handleSearch = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   }, []);
 
@@ -68,7 +81,7 @@ export const Datacustomer = () => {
   };
 
   return (
-    <div style={{ height: '600px', width: '100%' }}>
+    <div style={{ height: '550px', width: '100%' }}>
       <Container>
         <Row className="mb-3">
           <Col>
@@ -94,7 +107,7 @@ export const Datacustomer = () => {
  
 <Modal show={showModal} onHide={handleClose}>
   <Modal.Header closeButton>
-    <Modal.Title>Row Details</Modal.Title>
+    <Modal.Title>Data Pelanggan</Modal.Title>
   </Modal.Header>
   <Modal.Body>
     {selectedRow && (
@@ -112,7 +125,11 @@ export const Datacustomer = () => {
     )}
   </Modal.Body>
   <Modal.Footer>
-    <Button variant="secondary" onClick={handleClose}>Close</Button>
+  <Button variant="success">Panggil</Button>
+    <Button variant="primary">Kirim Pesan</Button>
+    <Button variant="dark">Edit Data</Button>
+    <Button variant="info">Ganti Status</Button>
+    <Button variant="secondary" onClick={handleClose}>Tutup</Button>
   </Modal.Footer>
 </Modal>
     </div>
