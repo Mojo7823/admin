@@ -1,9 +1,10 @@
 // nextjs/app/components/Datacustomer.tsx
 import React, { useEffect, useState, useCallback } from 'react';
-import { DataGrid, GridColumnHeaderParams, GridEventListener, MuiEvent } from '@mui/x-data-grid';
+import { DataGrid, GridColumnHeaderParams, GridEventListener, GridRowParams, MuiEvent } from '@mui/x-data-grid';
 import styled from '@emotion/styled';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Container, Row, Col, Button, Modal, Table as BootstrapTable, Form } from 'react-bootstrap';
+import swal from 'sweetalert2';
 
 const StyledDataGrid = styled(DataGrid)``;
 
@@ -46,9 +47,7 @@ export const Datacustomer = () => {
         return;
       }
       let data = await res.json();
-      // Add 'no' field to each row
       data = data.map((item: any, index: number) => ({ no: index + 1, ...item }));
-      // Apply filters
       if (filters.noHp) {
         data = data.filter((item: any) => item.no_hp && item.no_hp.trim() !== '');
       }
@@ -72,9 +71,66 @@ export const Datacustomer = () => {
     setShowModal(true);
   };
 
-  const handleClose = () => setShowModal(false);
+  const handleSelectionModelChange = (newSelectionModel: any) => {
+    setSelectedRows(newSelectionModel);
+  };
+
+  const [selectedRows, setSelectedRows] = useState<any[]>([]);
+  
+  const handleAdd = () => {
+    swal.fire({
+      title: 'Tambah Data',
+      html: `
+        <input id="swal-input1" class="swal2-input" placeholder="Kode Pelanggan">
+        <input id="swal-input2" class="swal2-input" placeholder="Nama Pelanggan">
+        <input id="swal-input3" class="swal2-input" placeholder="Alamat">
+        <input id="swal-input4" class="swal2-input" placeholder="Alamat Lengkap">
+        <input id="swal-input5" class="swal2-input" placeholder="No Hp">
+        <input id="swal-input6" class="swal2-input" placeholder="Status">
+        <input id="swal-input7" class="swal2-input" placeholder="Keterangan">
+      `,
+      focusConfirm: false,
+      preConfirm: () => {
+        return {
+          kode_pel: (document.getElementById('swal-input1') as HTMLInputElement).value,
+          nama: (document.getElementById('swal-input2') as HTMLInputElement).value,
+          alamat: (document.getElementById('swal-input3') as HTMLInputElement).value,
+          alamat2: (document.getElementById('swal-input4') as HTMLInputElement).value,
+          no_hp: (document.getElementById('swal-input5') as HTMLInputElement).value,
+          status: (document.getElementById('swal-input6') as HTMLInputElement).value,
+          keterangan: (document.getElementById('swal-input7') as HTMLInputElement).value,
+        }
+      },
+      showCancelButton: true,
+      confirmButtonText: 'Tambah',
+    }).then((result) => {
+      if (result.isConfirmed && result.value) {
+        fetch('/api/insertCustomer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(result.value),
+        })
+        .then(res => res.json())
+        .then(response => {
+          if (response.message === 'Data inserted successfully.') {
+            swal.fire('Success!', response.message, 'success');
+            fetchData();
+          } else {
+            swal.fire('Error!', response.message, 'error');
+          }
+        })
+        .catch(err => {
+          swal.fire('Error!', 'The AJAX request failed!', 'error');
+        });
+      }
+    });
+  };
 
   const [showFilterModal, setShowFilterModal] = useState(false);
+
+  const handleClose = () => setShowModal(false);
 
   const handleFilter = () => setShowFilterModal(true);
 
@@ -88,6 +144,44 @@ export const Datacustomer = () => {
   )
   );
 
+  const handleDelete = () => {
+    if (selectedRows.length > 0) {
+      swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'No, cancel!',
+        reverseButtons: true
+      }).then((result) => {
+        if (result.isConfirmed) {
+          fetch('/api/deleteCustomer', {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ ids: selectedRows[0] }),
+          })
+          .then(res => res.json())
+          .then(response => {
+            if (response.message === 'Data deleted successfully.') {
+              swal.fire('Deleted!', response.message, 'success');
+              fetchData();
+            } else {
+              swal.fire('Error!', response.message, 'error');
+            }
+          })
+          .catch(err => {
+            swal.fire('Error!', 'The AJAX request failed!', 'error');
+          });
+        }
+      })
+    } else {
+      swal.fire('Error!', 'No rows selected!', 'error');
+    }
+  };
+
   const handleColumnHeaderClick = (
     params: GridColumnHeaderParams,
     event: React.MouseEvent<HTMLElement>,
@@ -95,6 +189,11 @@ export const Datacustomer = () => {
   ) => {
     event.preventDefault();
   };
+
+  const handleRowClick = (param: any) => {
+    setSelectedRows([param.id]);
+  };
+
   return (
     <div style={{ height: '600px', width: '100%' }}>
       <Container>
@@ -103,27 +202,28 @@ export const Datacustomer = () => {
             <input type="text" value={searchTerm} onChange={handleSearch} placeholder="Cari Data..." className="form-control" />
           </Col>
           <Col xs="auto">
-            <Button variant="primary">Tambah</Button>
+            <Button variant="primary" onClick={handleAdd}>Tambah</Button>
           </Col>
           <Col xs="auto">
-            <Button variant="danger">Hapus</Button>
+          <Button variant="danger" onClick={handleDelete}>Hapus</Button>
           </Col>
           <Col xs="auto">
             <Button variant="warning" onClick={handleFilter}>Filter</Button>
           </Col>
         </Row>
         </Container>
-      <StyledDataGrid 
-        rows={filteredData} 
-        columns={columns} 
-        onCellDoubleClick={handleDoubleClick}
-        columnVisibilityModel={{
-          id: false,
-          keterangan: false,
-        }}
-        onColumnHeaderClick={handleColumnHeaderClick}
-      />
- 
+        <StyledDataGrid 
+          rows={filteredData} 
+          columns={columns} 
+          onCellDoubleClick={handleDoubleClick}
+          columnVisibilityModel={{
+            id: false,
+            keterangan: false,
+          }}
+          onColumnHeaderClick={handleColumnHeaderClick}
+          onRowClick={(param) => handleRowClick(param)}
+        />
+
  <Modal show={showFilterModal} onHide={() => setShowFilterModal(false)}>
   <Modal.Header closeButton>
     <Modal.Title>Pengaturan Filter</Modal.Title>
@@ -165,7 +265,6 @@ export const Datacustomer = () => {
           <tr><td><strong>Alamat Lengkap:</strong></td><td>{selectedRow.alamat2}</td></tr>
           <tr><td><strong>No Hp:</strong></td><td>{selectedRow.no_hp}</td></tr>
           <tr><td><strong>Status:</strong></td><td>{selectedRow.status}</td></tr>
-          <tr><td><strong>Keterangan:</strong></td><td>{selectedRow.keterangan}</td></tr>
         </tbody>
       </BootstrapTable>
     )}
