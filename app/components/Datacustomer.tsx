@@ -33,7 +33,7 @@ const columns = [
   }
 
 export const Datacustomer = () => {
-  const [data, setData] = useState([]);
+  const [data, setData] = useState<RowData[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [selectedRow, setSelectedRow] = useState<RowData | null>(null);
@@ -114,7 +114,7 @@ export const Datacustomer = () => {
         })
         .then(res => res.json())
         .then(response => {
-          if (response.message === 'Data inserted successfully.') {
+          if (response.message === 'Data Berhasil ditambahkan.') {
             swal.fire('Success!', response.message, 'success');
             fetchData();
           } else {
@@ -122,11 +122,12 @@ export const Datacustomer = () => {
           }
         })
         .catch(err => {
-          swal.fire('Error!', 'The AJAX request failed!', 'error');
+          swal.fire('Error!', 'Server error, Database bermasalah', 'error');
         });
       }
     });
   };
+
 
   const [showFilterModal, setShowFilterModal] = useState(false);
 
@@ -146,13 +147,17 @@ export const Datacustomer = () => {
 
   const handleDelete = () => {
     if (selectedRows.length > 0) {
+      const selectedCustomer = data.find((item: any) => item.id === selectedRows[0]);
+      const customerName = selectedCustomer ? selectedCustomer.nama : '';
+  
       swal.fire({
-        title: 'Are you sure?',
-        text: "You won't be able to revert this!",
+        title: `Hapus Data Pelanggan ${customerName}?`,
+        text: `Data yang telah dihapus tidak dapat dikembalikan!`,
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonText: 'Yes, delete it!',
-        cancelButtonText: 'No, cancel!',
+        confirmButtonText: 'Iya, Hapus!',
+        cancelButtonText: 'Batalkan!',
+        confirmButtonColor: '#d33',
         reverseButtons: true
       }).then((result) => {
         if (result.isConfirmed) {
@@ -194,6 +199,42 @@ export const Datacustomer = () => {
     setSelectedRows([param.id]);
   };
 
+  const onClickKirimPesan = async () => {
+    if (!selectedRow?.no_hp) {
+      swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: 'No phone number provided!',
+      }).then(() => {
+        handleShow(); 
+      });
+    } else {
+      handleClose(); 
+      const result = await swal.fire({
+        input: 'textarea',
+        inputPlaceholder: 'Type your message here...',
+        showCancelButton: true,
+        confirmButtonText: 'Kirim',
+        cancelButtonText: 'Batal',
+      });
+  
+      if (result.isConfirmed) {
+        const message = result.value;
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappUrl = `https://wa.me/${selectedRow?.no_hp}?text=${encodedMessage}`;
+        window.open(whatsappUrl, '_blank');
+      }
+  
+      handleShow(); // Re-open the Bootstrap modal
+    }
+  };
+
+  function handleShow() {
+    setShowModal(true);
+  }
+  
+
+  
   return (
     <div style={{ height: '600px', width: '100%' }}>
       <Container>
@@ -270,8 +311,14 @@ export const Datacustomer = () => {
     )}
   </Modal.Body>
   <Modal.Footer>
-  <Button variant="success">Panggil</Button>
-    <Button variant="primary">Kirim Pesan</Button>
+  <Button variant="success" onClick={() => {
+    if (selectedRow?.no_hp) {
+      window.open('https://wa.me/' + selectedRow?.no_hp);
+    } else {
+      swal.fire('Error!', 'Tidak ada nomor telpon untuk dipanggil!', 'error');
+    }
+  }}>Panggil</Button>
+    <Button variant="primary" onClick={onClickKirimPesan}>Kirim Pesan</Button>
     <Button variant="dark">Edit Data</Button>
     <Button variant="info">Ganti Status</Button>
     <Button variant="secondary" onClick={handleClose}>Tutup</Button>
@@ -280,3 +327,4 @@ export const Datacustomer = () => {
     </div>
   );
 };
+
