@@ -37,9 +37,7 @@ export const Datacustomer = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [selectedRow, setSelectedRow] = useState<RowData | null>(null);
-
   const [filters, setFilters] = useState({ noHp: false, salesOffline: false });
-
     const fetchData = useCallback(async () => {
       const res = await fetch('/api/customer');
       if (!res.ok) {
@@ -70,24 +68,60 @@ export const Datacustomer = () => {
     setSelectedRow(row);
     setShowModal(true);
   };
-
   const handleSelectionModelChange = (newSelectionModel: any) => {
     setSelectedRows(newSelectionModel);
   };
-
   const [selectedRows, setSelectedRows] = useState<any[]>([]);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const handleClose = () => {
+    setShowModal(false);
+    setSelectedRow(null); // reset the selected row when the modal is closed
+  };
+  const handleFilter = () => setShowFilterModal(true);
+  const handleSearch = useCallback((event: { target: { value: React.SetStateAction<string>; }; }) => {
+    setSearchTerm(event.target.value);
+  }, []);
+
+  const filteredData = data.filter((row: any) =>
+  columns.some(
+    (column) => row[column.field] && (row[column.field] as any).toString().toLowerCase().includes(searchTerm.toLowerCase())
+  )
+  );
+
+  const handleColumnHeaderClick = (
+    params: GridColumnHeaderParams,
+    event: React.MouseEvent<HTMLElement>,
+    details: any,
+  ) => {
+    event.preventDefault();
+  };
+
+  const handleRowClick = (param: any) => {
+    setSelectedRows([param.id]);
+  };
+
+  function handleShow() {
+    setShowModal(true);
+  }
+
+  const onClickEdit = () => {
+    if (!selectedRow) {
+      swal.fire('Error!', 'No row selected!', 'error');
+      return;
+    }
   
-  const handleAdd = () => {
+    handleClose();
+  
     swal.fire({
-      title: 'Tambah Data',
+      title: 'Edit Data',
       html: `
-        <input id="swal-input1" class="swal2-input" placeholder="Kode Pelanggan">
-        <input id="swal-input2" class="swal2-input" placeholder="Nama Pelanggan">
-        <input id="swal-input3" class="swal2-input" placeholder="Alamat">
-        <input id="swal-input4" class="swal2-input" placeholder="Alamat Lengkap">
-        <input id="swal-input5" class="swal2-input" placeholder="No Hp">
-        <input id="swal-input6" class="swal2-input" placeholder="Status">
-        <input id="swal-input7" class="swal2-input" placeholder="Keterangan">
+        <input id="swal-input1" class="swal2-input" placeholder="Kode Pelanggan" value="${selectedRow.kode_pel}">
+        <input id="swal-input2" class="swal2-input" placeholder="Nama Pelanggan" value="${selectedRow.nama}">
+        <input id="swal-input3" class="swal2-input" placeholder="Alamat" value="${selectedRow.alamat}">
+        <input id="swal-input4" class="swal2-input" placeholder="Alamat Lengkap" value="${selectedRow.alamat2}">
+        <input id="swal-input5" class="swal2-input" placeholder="No Hp" value="${selectedRow.no_hp}">
+        <input id="swal-input6" class="swal2-input" placeholder="Status" value="${selectedRow.status}">
+        <input id="swal-input7" class="swal2-input" placeholder="Keterangan" value="${selectedRow.keterangan}">
       `,
       focusConfirm: false,
       preConfirm: () => {
@@ -99,6 +133,58 @@ export const Datacustomer = () => {
           no_hp: (document.getElementById('swal-input5') as HTMLInputElement).value,
           status: (document.getElementById('swal-input6') as HTMLInputElement).value,
           keterangan: (document.getElementById('swal-input7') as HTMLInputElement).value,
+        }
+      },
+      showCancelButton: true,
+      confirmButtonText: 'Selesai',
+    }).then((result) => {
+      if (result.isConfirmed && result.value) {
+        fetch(`/api/updateCustomer/${selectedRow.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(result.value),
+        })
+        .then(res => res.json())
+        .then(response => {
+          if (response.message === 'Data updated successfully.') { // make sure this message matches the one from the server
+            swal.fire('Success!', response.message, 'success');
+            setSelectedRow(response.updatedRow); // update selectedRow with the updated data
+            fetchData(); // fetch the latest data after update
+          } else {
+            swal.fire('Error!', response.message, 'error');
+          }
+        })
+        .catch(err => {
+          swal.fire('Error!', 'Server error, Database bermasalah', 'error');
+        });
+      }
+    }).finally(() => {
+      handleShow();
+    });
+  };
+
+  const handleAdd = () => {
+    swal.fire({
+      title: 'Tambah Data',
+      html: `
+        <input id="swal-input1" class="swal2-input" placeholder="Kode Pelanggan">
+        <input id="swal-input2" class="swal2-input" placeholder="Nama Pelanggan">
+        <input id="swal-input3" class="swal2-input" placeholder="Alamat">
+        <input id="swal-input4" class="swal2-input" placeholder="Alamat Lengkap">
+        <input id="swal-input5" class="swal2-input" placeholder="No Hp">
+        <input id="swal-input6" class="swal2-input" placeholder="Status">
+      `,
+      focusConfirm: false,
+      preConfirm: () => {
+        return {
+          kode_pel: (document.getElementById('swal-input1') as HTMLInputElement).value,
+          nama: (document.getElementById('swal-input2') as HTMLInputElement).value,
+          alamat: (document.getElementById('swal-input3') as HTMLInputElement).value,
+          alamat2: (document.getElementById('swal-input4') as HTMLInputElement).value,
+          no_hp: (document.getElementById('swal-input5') as HTMLInputElement).value,
+          status: (document.getElementById('swal-input6') as HTMLInputElement).value,
         }
       },
       showCancelButton: true,
@@ -128,22 +214,35 @@ export const Datacustomer = () => {
     });
   };
 
-
-  const [showFilterModal, setShowFilterModal] = useState(false);
-
-  const handleClose = () => setShowModal(false);
-
-  const handleFilter = () => setShowFilterModal(true);
-
-  const handleSearch = useCallback((event: { target: { value: React.SetStateAction<string>; }; }) => {
-    setSearchTerm(event.target.value);
-  }, []);
-
-  const filteredData = data.filter((row: any) =>
-  columns.some(
-    (column) => row[column.field] && (row[column.field] as any).toString().toLowerCase().includes(searchTerm.toLowerCase())
-  )
-  );
+  const onClickKirimPesan = async () => {
+    if (!selectedRow?.no_hp) {
+      swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: 'No telpon kosong, Harap cek atau lengkapi dahulu!',
+      }).then(() => {
+        handleShow(); 
+      });
+    } else {
+      handleClose(); 
+      const result = await swal.fire({
+        input: 'textarea',
+        inputPlaceholder: 'Tulis pesan disini...',
+        showCancelButton: true,
+        confirmButtonText: 'Kirim',
+        cancelButtonText: 'Batal',
+      });
+  
+      if (result.isConfirmed) {
+        const message = result.value;
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappUrl = `https://wa.me/${selectedRow?.no_hp}?text=${encodedMessage}`;
+        window.open(whatsappUrl, '_blank');
+      }
+  
+      handleShow();
+    }
+  };
 
   const handleDelete = () => {
     if (selectedRows.length > 0) {
@@ -186,54 +285,6 @@ export const Datacustomer = () => {
       swal.fire('Error!', 'No rows selected!', 'error');
     }
   };
-
-  const handleColumnHeaderClick = (
-    params: GridColumnHeaderParams,
-    event: React.MouseEvent<HTMLElement>,
-    details: any,
-  ) => {
-    event.preventDefault();
-  };
-
-  const handleRowClick = (param: any) => {
-    setSelectedRows([param.id]);
-  };
-
-  const onClickKirimPesan = async () => {
-    if (!selectedRow?.no_hp) {
-      swal.fire({
-        icon: 'error',
-        title: 'Oops...',
-        text: 'No phone number provided!',
-      }).then(() => {
-        handleShow(); 
-      });
-    } else {
-      handleClose(); 
-      const result = await swal.fire({
-        input: 'textarea',
-        inputPlaceholder: 'Type your message here...',
-        showCancelButton: true,
-        confirmButtonText: 'Kirim',
-        cancelButtonText: 'Batal',
-      });
-  
-      if (result.isConfirmed) {
-        const message = result.value;
-        const encodedMessage = encodeURIComponent(message);
-        const whatsappUrl = `https://wa.me/${selectedRow?.no_hp}?text=${encodedMessage}`;
-        window.open(whatsappUrl, '_blank');
-      }
-  
-      handleShow(); // Re-open the Bootstrap modal
-    }
-  };
-
-  function handleShow() {
-    setShowModal(true);
-  }
-  
-
   
   return (
     <div style={{ height: '600px', width: '100%' }}>
@@ -306,6 +357,7 @@ export const Datacustomer = () => {
           <tr><td><strong>Alamat Lengkap:</strong></td><td>{selectedRow.alamat2}</td></tr>
           <tr><td><strong>No Hp:</strong></td><td>{selectedRow.no_hp}</td></tr>
           <tr><td><strong>Status:</strong></td><td>{selectedRow.status}</td></tr>
+          <tr><td><strong>Keterangan:</strong></td><td>{selectedRow.keterangan}</td></tr>
         </tbody>
       </BootstrapTable>
     )}
@@ -319,7 +371,7 @@ export const Datacustomer = () => {
     }
   }}>Panggil</Button>
     <Button variant="primary" onClick={onClickKirimPesan}>Kirim Pesan</Button>
-    <Button variant="dark">Edit Data</Button>
+    <Button variant="warning" onClick={onClickEdit}>Edit Data</Button>
     <Button variant="info">Ganti Status</Button>
     <Button variant="secondary" onClick={handleClose}>Tutup</Button>
   </Modal.Footer>
@@ -327,4 +379,3 @@ export const Datacustomer = () => {
     </div>
   );
 };
-
