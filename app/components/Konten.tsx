@@ -6,7 +6,7 @@ import { Datacustomer } from './Datacustomer';
 
 const Konten = () => {
     return (
-        <div className="details my-5 pt-5"> {/* Add a top padding here */}
+        <div className="details my-5 pt-5">
             <div className="container">
                 <Datacustomer />
             </div>

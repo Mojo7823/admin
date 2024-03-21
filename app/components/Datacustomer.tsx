@@ -63,7 +63,7 @@ export const Datacustomer = () => {
       return () => {
         abortController.abort();
       };
-    }, []);
+    }, [filters]);
 
   const applyFilters = () => {
     setShowFilterModal(false);
@@ -77,7 +77,7 @@ export const Datacustomer = () => {
     return () => {
       abortController.abort();
     };
-  }, [fetchData, filters, selectedRow]);
+  }, [fetchData]);
 
   const handleDoubleClick = ({ row }: { row: any }) => {
     setSelectedRow(row);
@@ -90,7 +90,7 @@ export const Datacustomer = () => {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const handleClose = () => {
     setShowModal(false);
-    setSelectedRow(null); // reset the selected row when the modal is closed
+    setSelectedRow(null);
   };
   const handleFilter = () => setShowFilterModal(true);
   const handleSearch = useCallback((event: { target: { value: React.SetStateAction<string>; }; }) => {
@@ -121,6 +121,97 @@ export const Datacustomer = () => {
     setShowModal(true);
   }
 
+  const onClickChangeStatus = () => {
+    if (!selectedRow) {
+      swal.fire('Error!', 'No row selected!', 'error');
+      return;
+    }
+
+    handleClose();
+    
+      swal.fire({
+        title: 'Change Status',
+        input: 'text',
+        inputValue: selectedRow.status,
+        inputPlaceholder: 'Enter new status',
+        showCancelButton: true,
+        confirmButtonText: 'Ubah',
+        cancelButtonText: 'Batal',
+      }).then((result) => {
+        if (result.isConfirmed && result.value) {
+          fetch(`/api/changeStatus/${selectedRow.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: result.value }),
+          })
+          .then(res => res.json())
+          .then(async response => {
+            if (response.message === 'Status updated successfully.') {
+              swal.fire('Success!', response.message, 'success');
+              await fetchData();
+            } else {
+              swal.fire('Error!', response.message, 'error');
+            }
+          
+          })
+          .catch(err => {
+            swal.fire('Error!', 'Server error, Database bermasalah', 'error');
+          });
+        }
+      });
+  };
+
+  const handleAdd = () => {
+    swal.fire({
+      title: 'Tambah Data',
+      html: `
+        <input id="swal-input1" class="swal2-input" placeholder="Kode Pelanggan">
+        <input id="swal-input2" class="swal2-input" placeholder="Nama Pelanggan">
+        <input id="swal-input3" class="swal2-input" placeholder="Alamat">
+        <input id="swal-input4" class="swal2-input" placeholder="Alamat Lengkap">
+        <input id="swal-input5" class="swal2-input" placeholder="No Hp">
+        <input id="swal-input6" class="swal2-input" placeholder="Status">
+      `,
+      focusConfirm: false,
+      preConfirm: () => {
+        return {
+          kode_pel: (document.getElementById('swal-input1') as HTMLInputElement).value,
+          nama: (document.getElementById('swal-input2') as HTMLInputElement).value,
+          alamat: (document.getElementById('swal-input3') as HTMLInputElement).value,
+          alamat2: (document.getElementById('swal-input4') as HTMLInputElement).value,
+          no_hp: (document.getElementById('swal-input5') as HTMLInputElement).value,
+          status: (document.getElementById('swal-input6') as HTMLInputElement).value,
+        }
+      },
+      showCancelButton: true,
+      confirmButtonText: 'Tambah',
+    }).then((result) => {
+      if (result.isConfirmed && result.value) {
+        fetch('/api/insertCustomer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(result.value),
+        })
+        .then(res => res.json())
+        .then(response => {
+          if (response.message.trim().toLowerCase() === 'data berhasil ditambahkan.') {
+            swal.fire('Success!', response.message, 'success');
+            fetchData();
+          } else {
+            swal.fire('Error!', response.message, 'error');
+          }
+        })
+        .catch(err => {
+          swal.fire('Error!', 'Server error, Database bermasalah', 'error');
+        });
+      }
+    });
+  };
+
   const onClickEdit = () => {
     if (!selectedRow) {
       swal.fire('Error!', 'No row selected!', 'error');
@@ -128,7 +219,8 @@ export const Datacustomer = () => {
     }
   
     handleClose();
-  
+
+  const originalData = { ...selectedRow };  
     swal.fire({
       title: 'Edit Data',
       html: `
@@ -167,8 +259,11 @@ export const Datacustomer = () => {
         .then(response => {
           if (response.message === 'Data updated successfully.') {
             swal.fire('Success!', response.message, 'success');
-            setSelectedRow(response.updatedRow);
+            // Update the selectedRow state with the updated data
+            setSelectedRow(prevState => ({ ...prevState, ...result.value }));
             fetchData(); 
+            // Show the first modal
+            handleShow();
           } else {
             swal.fire('Error!', response.message, 'error');
           }
@@ -176,57 +271,10 @@ export const Datacustomer = () => {
         .catch(err => {
           swal.fire('Error!', 'Server error, Database bermasalah', 'error');
         });
-      }
-    }).finally(() => {
-      handleShow();
-    });
-  };
-
-  const handleAdd = () => {
-    swal.fire({
-      title: 'Tambah Data',
-      html: `
-        <input id="swal-input1" class="swal2-input" placeholder="Kode Pelanggan">
-        <input id="swal-input2" class="swal2-input" placeholder="Nama Pelanggan">
-        <input id="swal-input3" class="swal2-input" placeholder="Alamat">
-        <input id="swal-input4" class="swal2-input" placeholder="Alamat Lengkap">
-        <input id="swal-input5" class="swal2-input" placeholder="No Hp">
-        <input id="swal-input6" class="swal2-input" placeholder="Status">
-      `,
-      focusConfirm: false,
-      preConfirm: () => {
-        return {
-          kode_pel: (document.getElementById('swal-input1') as HTMLInputElement).value,
-          nama: (document.getElementById('swal-input2') as HTMLInputElement).value,
-          alamat: (document.getElementById('swal-input3') as HTMLInputElement).value,
-          alamat2: (document.getElementById('swal-input4') as HTMLInputElement).value,
-          no_hp: (document.getElementById('swal-input5') as HTMLInputElement).value,
-          status: (document.getElementById('swal-input6') as HTMLInputElement).value,
-        }
-      },
-      showCancelButton: true,
-      confirmButtonText: 'Tambah',
-    }).then((result) => {
-      if (result.isConfirmed && result.value) {
-        fetch('/api/insertCustomer', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(result.value),
-        })
-        .then(res => res.json())
-        .then(response => {
-          if (response.message === 'Data Berhasil ditambahkan.') {
-            swal.fire('Success!', response.message, 'success');
-            fetchData();
-          } else {
-            swal.fire('Error!', response.message, 'error');
-          }
-        })
-        .catch(err => {
-          swal.fire('Error!', 'Server error, Database bermasalah', 'error');
-        });
+      } else if (result.dismiss === swal.DismissReason.cancel) {
+        // Update the selectedRow state with the original data
+        setSelectedRow(originalData);
+        handleShow();
       }
     });
   };
@@ -389,7 +437,7 @@ export const Datacustomer = () => {
   }}>Panggil</Button>
     <Button variant="primary" onClick={onClickKirimPesan}>Kirim Pesan</Button>
     <Button variant="warning" onClick={onClickEdit}>Edit Data</Button>
-    <Button variant="info">Ganti Status</Button>
+    <Button variant="info" onClick={onClickChangeStatus}>Ubah Status</Button>
     <Button variant="secondary" onClick={handleClose}>Tutup</Button>
   </Modal.Footer>
 </Modal>
