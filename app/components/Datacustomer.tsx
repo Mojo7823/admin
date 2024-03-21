@@ -38,22 +38,32 @@ export const Datacustomer = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedRow, setSelectedRow] = useState<RowData | null>(null);
   const [filters, setFilters] = useState({ noHp: false, salesOffline: false });
-    const fetchData = useCallback(async () => {
-      const res = await fetch('/api/customer');
-      if (!res.ok) {
-        console.error('An error occurred:', await res.text());
-        return;
-      }
-      let data = await res.json();
-      data = data.map((item: any, index: number) => ({ no: index + 1, ...item }));
-      if (filters.noHp) {
-        data = data.filter((item: any) => item.no_hp && item.no_hp.trim() !== '');
-      }
-      if (filters.salesOffline) {
-        data = data.filter((item: any) => !item.keterangan || item.keterangan.trim() === '');
-      }
-      setData(data);
-    }, [filters]);
+  const fetchData = useCallback(async () => {
+    const abortController = new AbortController();
+    const res = await fetch('/api/customer', { signal: abortController.signal });
+    if (!res.ok) {
+      console.error('An error occurred:', await res.text());
+      return;
+    }
+    let data = await res.json();
+    data = data.map((item: any, index: number) => ({ no: index + 1, ...item }));
+    if (filters.noHp) {
+      data = data.filter((item: any) => item.no_hp && item.no_hp.trim() !== '');
+    }
+    if (filters.salesOffline) {
+      data = data.filter((item: any) => !item.keterangan || item.keterangan.trim() === '');
+    }
+    setData(data);
+    // Update the selectedRow state with the updated data
+    if (selectedRow) {
+      const updatedRow = data.find((row: RowData) => row.id === selectedRow.id);
+      setSelectedRow(updatedRow);
+    }
+      // Cleanup function
+      return () => {
+        abortController.abort();
+      };
+    }, [filters, selectedRow]);
 
   const applyFilters = () => {
     setShowFilterModal(false);
@@ -61,7 +71,12 @@ export const Datacustomer = () => {
   };
 
   useEffect(() => {
+    const abortController = new AbortController();
     fetchData();
+  
+    return () => {
+      abortController.abort();
+    };
   }, [fetchData]);
 
   const handleDoubleClick = ({ row }: { row: any }) => {
@@ -97,7 +112,9 @@ export const Datacustomer = () => {
   };
 
   const handleRowClick = (param: any) => {
-    setSelectedRows([param.id]);
+    if (!selectedRows.includes(param.id)) {
+      setSelectedRows([param.id]);
+    }
   };
 
   function handleShow() {
@@ -148,10 +165,10 @@ export const Datacustomer = () => {
         })
         .then(res => res.json())
         .then(response => {
-          if (response.message === 'Data updated successfully.') { // make sure this message matches the one from the server
+          if (response.message === 'Data updated successfully.') {
             swal.fire('Success!', response.message, 'success');
-            setSelectedRow(response.updatedRow); // update selectedRow with the updated data
-            fetchData(); // fetch the latest data after update
+            setSelectedRow(response.updatedRow);
+            fetchData(); 
           } else {
             swal.fire('Error!', response.message, 'error');
           }
