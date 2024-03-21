@@ -63,7 +63,7 @@ export const Datacustomer = () => {
       return () => {
         abortController.abort();
       };
-    }, [filters, selectedRow]);
+    }, []);
 
   const applyFilters = () => {
     setShowFilterModal(false);
@@ -73,11 +73,11 @@ export const Datacustomer = () => {
   useEffect(() => {
     const abortController = new AbortController();
     fetchData();
-  
+    
     return () => {
       abortController.abort();
     };
-  }, [fetchData]);
+  }, [fetchData, filters, selectedRow]);
 
   const handleDoubleClick = ({ row }: { row: any }) => {
     setSelectedRow(row);
